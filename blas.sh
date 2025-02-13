@@ -51,45 +51,27 @@ bisiesto() {
 }
 
 configurarred() {
- echo "Hola. Pasare,os a recoger los datos."
- Netplan="/etc/netplan/50-cloud-init.yaml" #Suponemos la ruta
- Backup="/etc/netplan/50-cloud-init.yaml.bak" #Creamos un backup
-
- #Creamos un respaldo del archivo de netplan
- if [ -f "$netplan" ]; then
-      echo "Creando un respaldo de archivo existente en $Backup.."
-      sudo cp "$Netplan" "$Backup"
- fi
-
- #Sobreescribimos el contenido
- cat << EOF | sudo tee "$Netplan"
- network:
-   version: 2
-   ethernets:
-     enp0s3:
-       dhcp4: false
-       addresses:
-         - $1/$2
-       routes:
-         - to: 0.0.0.0/24
-           via: $gw
-       nameservers:
-         addresses:
-           - $dns
-EOF
-
- #Aplicamso la configuración
- echo "Aplicando la nueva configuración"
- sudo netplan apply
-
- #Mostramos la configuración
- echo "Configuración de la red"
- ip addr show
- echo "---------"
- ip route show
- echo "---------"
- cat "$Netplan"
-exit 1
+ rm /etc/netplan/*
+ sleep 1
+ echo "
+ version: 2
+   network:
+       ethernets:
+           enp9s3:
+               dhcp4: no
+               addresses: $1/$2
+               routes:
+                 - to: default
+                   via: $3
+               nameservers:
+                addresses: [$4]
+ " > /etc/netplan/50-cloud-init.yaml
+  netplan apply 2>/dev/null
+  echo "Aplicando.."
+  sleep 1
+  echo "Aquí se puede ver la IP: "
+  ip a
+ sleep 1
 }
 
 adivina() {
