@@ -51,54 +51,38 @@ bisiesto() {
 }
 
 configurarred() {
- rm /etc/netplan/*
- sleep 1
- echo "
- version: 2
-   network:
-       ethernets:
-           enp9s3:
-               dhcp4: no
-               addresses: $1/$2
-               routes:
-                 - to: default
-                   via: $3
-               nameservers:
-                addresses: [$4]
- " > /etc/netplan/50-cloud-init.yaml
-  netplan apply 2>/dev/null
-  echo "Aplicando.."
-  sleep 1
-  echo "Aquí se puede ver la IP: "
-  ip a
- sleep 1
+    if [ -z $4 ]; then
+        echo "Debe de pasar el parametro cuando se le solicite"
+        return
+    fi
+    sudo ip addr flush dev enp0s3
+    sudo ip addr add $1/$2 dev enp0s3
+    sudo ip addr link set enp0s3 up
+    sudo ip route add default via $3
+    echo -e "nameserver $4" | sudo tee /etc/resolv.cond 2>/dev/null
+    echo "Configuración aplicada"
+    ip a
 }
 
 adivina() {
- #Generamos el número aleatorio
- randm=$(( RANDOM % 100 + 1 ))
- intentos=0
- max_intentos=10
- echo "¡Bienvenido al juego de Adivina el Número!"
- echo "He pensado en un número 1 y 100. ¡Intenta adivinaro!"
+rand=$((RANDOM%100+1))
+intentos=0
+adivinado=0
 
- #Bucle
- while [ $intentos -lt $max_intentos ]; do
-  read -p "Intento $(($intentos + 1 ))/$max_intentos. Deme el numero: " num
+while [ $adivinado -ne 1 ]; do
+    read -p "Este es su intento número $(($intentos+1)). Deme el número: " num
+    intentos=$(($intentos+1))
 
-  intentos=$(($intentos+1))
-   #Comparamos
-   if [ $num -lt $randm ]; then
-     echo "Introduzca un número mayor al introducido"
-   elif [ $num -gt $randm ]; then
-     echo "Introduzca un número menor al introducido"
-   else
-     echo "Has adivinado el número"
-     echo "Número de intentos: $intentos"
-   fi
- done
- echo "Lo siento, has agotado los intentos máximo. El número random era $randm"
-exit 1
+    if [ $num -gt $rand ]; then
+        echo "El número introducido es mayor. Pruebe uno más bajo."
+    elif [ $num -lt $rand ]; then
+        echo "El número introducido es menor. Pruebe uno más alto."
+    else
+        echo "Ha adivinado. En un total de $intentos "
+        echo ""
+        adivinado=1
+    fi
+done
 }
 
 edad() {
@@ -127,73 +111,40 @@ exit 1
 }
 
 fichero() {
-  if [ -z $1 ]; then
-    echo "Debe de pasar el nombre del fichero. Ponga el ruta absoluta"
-    exit 1
-  fi
-  #Comprobamos que existe el fichero
-  if [ ! -e $1 ]; then
-    echo "El fichero no existe"
-    exit 1
-  fi
-  #Tomamos el tamaño del archivo
-  size=$(stat -c "%s" "$1") #stat se usa para obtener los datos
-  #Tipo de fichero
-  size=$(stat -c "%F" "$1")
-  #Nº de inodo
-  size=$(stat -c "%i" "$1")
-  #Punto de montaje
-  punto_montaje=$(stat -c "%m" "$1")
-  #Mostramos la información
-  echo "Información del fichero:"
-  echo "Ruta: $fichero"
-  echo "Tamaño: $size bytes"
+  tamanio=$(stat -c "%s" "$1")
+  tipo=$(stat -c "%F" "$1")
+  inodo=$(stat -c "%i" "$1")
+  montaje=$(stat -c "%m" "$1")
+  echo "Datos del fichero $fichero: "
+  echo "Tamaño: $tamanio"
   echo "Tipo: $tipo"
   echo "Inodo: $inodo"
-  echo "Punto de montaje: $punto_montaje"
+  echo "Montaje: $montaje"
 }
 
 buscar() {
-  if [ -z $1 ]; then
-    echo "Debe de pasar el nombre del archivo"
-    exit 1
-  fi
-  #Realizamos la busqueda
-  busqueda=$(find / -type f -name "$1" 2>/dev/null)
-
-  if [ -z "$busqueda" ]; then
-      echo "El archivo no existe en el sistema"
-  else
-      echo "Fichero encontrado en: $busqueda" #ofrecemos la ruta
-      vocaltes=$(cat "$busqueda" | tr -cd "aeiouAEIOU" | wc -c) #contamos vocales
-      echo "El fichero contiene $vocales vocales"
-  fi
+ busqueda=$(find / -type f -name "$1" 2>/dev/null)
+ if [ -z $busqueda ]; then
+   echo "El fichero no se encuentra en el sistema"
+ else
+  echo "Fichero encontrado."
+  echo "Contando vocales almacenadas..."
+  voc=$(cat "$1" | tr -cd  "aeiouAEIOU"  | wc -c)
+  echo "El fichero contiene $voc vocales"
+ fi
 }
 
 
 contar(){
-  busqueda=$(find / -type d -name "$1")
-
-  if [ -z "$busqueda" ]; then
-    echo "El directorio no existe en el sistema."
-  else
-    echo "Directorio encontrado."
-    echo "Contando el numero de ficheros ... "
-    ficheros=$(find "$1" -type f | wc -l)
-    echo "El direcotrio $directorio contiene $ficheros ficheros."
-  fi
-
-exit 1
+num=$(ls -l "$1" | grep "^-" | wc -l)
+echo "El número de ficheros dentro del directorio $1 es de $num."
 }
 
 privilegios() {
-
- usu=$(whoami) #Obtenemos el usuario
- echo "Usted es el usuario $usu. Confirmando privilegios..."
- if sudo -n true; then #Confirmamos si tiene o no permisos
-   echo "Usted tiene permisos administrativos en este sistema."
+ if sudo -n true 2>/dev/null; then
+        echo "Usted tiene privilegios"
  else
-   echo "Usted no tiene permisos administrativos en este sistema."
+        echo "Usted es negro"
  fi
 }
 
@@ -227,75 +178,60 @@ romano() {
 }
 
 automatizar() {
-if [ $(ls /mnt/usuarios) ]; then
-   for i in $(ls /mnt/usuarios); do
-      sudo useradd -m -s /bin/bash $i
-        for z in $(cat $i); dp
-          sudo mkdir /home/$i/$z
+ if [ "$(ls /mnt/usuarios)" 2>/dev/null ]; then
+        for i in $(ls /mnt/usuarios); do
+            useradd -m -s /bin/bash $i
+            for d in $(cat /mnt/usuarios/$i); do
+                mkdir -p /home/$i/$d
+            done
+            rm /mnt/usuarios/$i
         done
-        sudo passwd $i
-        sudo rm /mnt/usuarios/$i
-    done
-  else
-     echo "El directorio está vacío"
-  fi
-
+ else
+        echo "Directorio vacío"
+ fi
+}
 crear() {
-  # Comprobamos si el primer parámetro está presente
-  if [ -z "$1" ]; then
-      # Si no hay primer parámetro, asignamos un nombre por defecto
-      nombre="fichero_vacio"
+  if [ -z $2 ]; then
+        fallocate -l 1024K $1
   else
-      nombre=$1
+        fallocate -l "$2K" $1
   fi
-
-  # Comprobamos si el segundo parámetro está presente
-  if [ -z "$2" ]; then
-      # Si no hay segundo parámetro, asignamos 1024 KB como tamaño por defecto
-      tamano=1024
-  else
-      tamano=$2
-  fi
-
-  # Crear el archivo con el nombre y tamaño especificado
-  dd if=/dev/zero of=$nombre bs=1K count=$tamano
-
-  echo "Se ha creado el archivo '$nombre' con un tamaño de $tamano KB"
 }
 
 crear_2() {
-  # Comprobamos si el primer parámetro está presente
-  if [ -z "$1" ]; then
-      # Si no hay primer parámetro, asignamos un nombre por defecto
-      nombre="fichero_vacio"
+  if [ -z $2 ]; then
+     tamano=1024
   else
-      nombre=$1
+     tamano=$2
   fi
 
-  # Comprobamos si el segundo parámetro está presente
-  if [ -z "$2" ]; then
-      # Si no hay segundo parámetro, asignamos 1024 KB como tamaño por defecto
-      tamano=1024
-  else
-      tamano=$2
+  archivo="$1"
+
+  if [ -e "$archivo" ]; then
+        i=1
+        creado=0
+        while [ $i -le 9 ]; do
+          nuevo="${archivo}${i}"
+          if [ ! -e "$nuevo" ]; then
+            archivo="$nuevo"
+            creado=1
+            break
+          fi
+          ((i++))
+        done
+
+        if [ "$creado" -eq 0 ]; then
+                echo "No se pueden crear más archivos del mismo nombre."
+                exit 1
+        fi
+        echo "El archivo ya existe. Se creará uno de nombre $archivo"
   fi
 
-  archivo=$1
-  sufijo=1
+  fallocate -l "${tamano}K" "$archivo"
+  echo "Archivo creado: "
+  echo "Nombre: $archivo"
+  echo "Tamaño: $(stat -c '%s' "$archivo")"
 
-    # Mientras el archivo con el sufijo no exista y el sufijo sea menor o igual a 9
-    while [ -e "$archivo$sufijo" ] && [ $sufijo -le 9 ]; do
-        ((sufijo++))
-    done
-
-    # Si el sufijo llega a 10, significa que no hay espacio para crear el archivo
-    if [ $sufijo -le 9 ]; then
-        archivo="$archivo$sufijo"
-        dd if=/dev/zero of="$archivo" bs=1K count=$tamano
-        echo "Se ha creado el archivo '$archivo' con un tamaño de $tamano KB"
-    else
-        echo "No se pudo crear el archivo. Ya existen archivos con sufijos hasta 9."
-    fi
 }
 
 reescribir() {
