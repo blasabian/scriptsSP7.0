@@ -227,39 +227,18 @@ romano() {
 }
 
 automatizar() {
-DIRECTORIO="/mnt/usuarios"
-
-# Verificar si el directorio está vacío
-if [ -z "$(ls -A $DIRECTORIO)" ]; then
-    echo "El directorio $DIRECTORIO está vacío. No hay archivos para procesar."
-    exit 0
-fi
-
-# Procesar cada archivo en el directorio
-for archivo in "$DIRECTORIO"/*; do
-    # Obtener el nombre del usuario a partir del nombre del archivo
-    usuario=$(basename "$archivo")
-
-    # Crear el usuario si no existe
-    if ! id "$usuario" &>/dev/null; then
-        useradd -m "$usuario"
-        echo "Usuario $usuario creado."
-    else
-        echo "El usuario $usuario ya existe."
-    fi
-
-    # Leer el archivo y crear las carpetas dentro del home del usuario
-    HOME_DIR="/home/$usuario"
-    while IFS= read -r carpeta; do
-        mkdir -p "$HOME_DIR/$carpeta"
-        echo "Carpeta $carpeta creada en $HOME_DIR."
-    done < "$archivo"
-
-    # Eliminar el archivo una vez procesado
-    rm "$archivo"
-    echo "Archivo $archivo eliminado."
-done
-}
+if [ $(ls /mnt/usuarios) ]; then
+   for i in $(ls /mnt/usuarios); do
+      sudo useradd -m -s /bin/bash $i
+        for z in $(cat $i); dp
+          sudo mkdir /home/$i/$z
+        done
+        sudo passwd $i
+        sudo rm /mnt/usuarios/$i
+    done
+  else
+     echo "El directorio está vacío"
+  fi
 
 crear() {
   # Comprobamos si el primer parámetro está presente
