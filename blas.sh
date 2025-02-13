@@ -216,37 +216,9 @@ privilegios() {
 }
 
 permisosoctal() {
- ruta="$1"
-    # Obtener los permisos en formato simbólico
-    permisos_simbolicos=$(ls -ld "$ruta" | awk '{print $1}')
-
-    # Convertir permisos simbólicos a octal
-    permisos_octales=$(stat -c "%a" "$ruta")
-
-    # Comprobar permisos especiales
-    suid=0
-    sgid=0
-    sticky=0
-
-    if [[ ${permisos_simbolicos:2:1} == "s" || ${permisos_simbolicos:2:1} == "S" ]]; then
-        suid=4
-    fi
-    if [[ ${permisos_simbolicos:5:1} == "s" || ${permisos_simbolicos:5:1} == "S" ]]; then
-        sgid=2
-    fi
-    if [[ ${permisos_simbolicos:8:1} == "t" || ${permisos_simbolicos:8:1} == "T" ]]; then
-        sticky=1
-    fi
-
-    # Calcular el dígito de los permisos especiales
-    permisos_especiales=$((suid + sgid + sticky))
-
-    # Mostrar el resultado
-    if [ $permisos_especiales -ne 0 ]; then
-        echo "Permisos octales: $permisos_especiales$permisos_octales"
-    else
-        echo "Permisos octales: $permisos_octales"
-    fi
+  permisos=$(stat -c '%c' $1)
+  echo "Los permisos del fichero son: $permisos"
+  echo ""
 }
 
 romano() {
