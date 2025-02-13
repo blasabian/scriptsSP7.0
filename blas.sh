@@ -137,13 +137,13 @@ fichero() {
     exit 1
   fi
   #Tomamos el tamaño del archivo
-  size=$(stat --format="%s" "$1") #stat se usa para obtener los datos
+  size=$(stat -c "%s" "$1") #stat se usa para obtener los datos
   #Tipo de fichero
-  size=$(stat --format="%F" "$1")
+  size=$(stat -c "%F" "$1")
   #Nº de inodo
-  size=$(stat --format="%i" "$1")
+  size=$(stat -c "%i" "$1")
   #Punto de montaje
-  punto_montaje=$(df --output=target "$1" | tail -n 1) #la primera parte obtiene el punto de montaje
+  punto_montaje=$(stat -c "%m" "$1")
   #Mostramos la información
   echo "Información del fichero:"
   echo "Ruta: $fichero"
