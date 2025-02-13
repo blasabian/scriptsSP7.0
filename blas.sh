@@ -297,12 +297,6 @@ alumnos(){
   # Pedir el número de alumnos
   read -p "Introduce el número de alumnos de la clase: " num_alumnos
 
-  # Comprobar que el número de alumnos sea un número positivo
-  if ! [[ "$num_alumnos" =~ ^[0-9]+$ ]] || [ "$num_alumnos" -le 0 ]; then
-    echo "Por favor, introduce un número válido de alumnos."
-    exit 1
-  fi
-
   # Inicializar contadores
   aprobados=0
   suspensos=0
