@@ -307,13 +307,6 @@ alumnos(){
     do
       # Pedir la nota del alumno
       read -p "Introduce la nota del alumno $i (0-10): " nota
-
-    # Comprobar que la nota sea válida
-    if ! [[ "$nota" =~ ^[0-9]+(\.[0-9]+)?$ ]] || (( $(echo "$nota < 0" | bc -l) )) || (( $(echo "$nota > 10" | bc -l) )); then
-      echo "Nota no válida. La nota debe estar entre 0 y 10."
-      exit 1
-    fi
-
     # Actualizar la suma total de las notas
     total_notas=$(echo "$total_notas + $nota" | bc)
 
